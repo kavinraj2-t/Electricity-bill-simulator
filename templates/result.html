@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Simulation Results</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="theme-grid">
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <main class="page-shell">
+        <section class="result-hero reveal">
+            <div>
+                <span class="eyebrow">Facility Simulation</span>
+                <h1>{{ facility_name }}</h1>
+                <div class="tag-row">
+                    <span class="mini-tag">Total Units: {{ simulation.total_units }} kWh</span>
+                    <span class="mini-tag">Peak Units: {{ simulation.peak_units }} kWh</span>
+                    <span class="mini-tag">Demand: {{ simulation.max_demand_kw }} kW</span>
+                    <span class="mini-tag">{{ "MongoDB Active" if database_enabled else "In-Memory History Mode" }}</span>
+                </div>
+            </div>
+            <div class="summary-stack">
+                <article class="glass-card metric-card">
+                    <span>Total Bill</span>
+                    <strong>Rs {{ simulation.bill_summary.total_bill }}</strong>
+                </article>
+                <article class="glass-card metric-card accent">
+                    <span>Demand Charge</span>
+                    <strong>Rs {{ simulation.bill_summary.demand_charge }}</strong>
+                </article>
+            </div>
+        </section>
+
+        <section class="dashboard-grid reveal">
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Machine Breakdown</span>
+                        <h2>Consumption by equipment</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>kW</th>
+                                <th>Hours/Day</th>
+                                <th>Units</th>
+                                <th>Peak Units</th>
+                                <th>Off-Peak Units</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for machine in simulation.machine_breakdown %}
+                            <tr>
+                                <td>{{ machine.name }}</td>
+                                <td>{{ machine.power_kw }}</td>
+                                <td>{{ machine.operating_hours }}</td>
+                                <td>{{ machine.monthly_units }}</td>
+                                <td>{{ machine.monthly_peak_units }}</td>
+                                <td>{{ machine.monthly_off_peak_units }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Cost Breakdown</span>
+                        <h2>TOU and demand billing</h2>
+                    </div>
+                </div>
+                <div class="summary-lines">
+                    <div><span>Peak Cost</span><strong>Rs {{ dashboard.cost_breakdown.peak_cost }}</strong></div>
+                    <div><span>Off-Peak Cost</span><strong>Rs {{ dashboard.cost_breakdown.off_peak_cost }}</strong></div>
+                    <div><span>Demand Charge</span><strong>Rs {{ dashboard.cost_breakdown.demand_charge }}</strong></div>
+                    <div><span>Total Bill</span><strong>Rs {{ dashboard.cost_breakdown.total_bill }}</strong></div>
+                </div>
+            </article>
+        </section>
+
+        <section class="dashboard-grid reveal">
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Structured Conditions</span>
+                        <h2>Exceptional operation schedule</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Extra Hours</th>
+                                <th>Days</th>
+                                <th>Mode</th>
+                                <th>Specific Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in dashboard.exceptional_conditions %}
+                            <tr>
+                                <td>{{ item.machine }}</td>
+                                <td>{{ item.extra_hours }}</td>
+                                <td>{{ item.days }}</td>
+                                <td>{{ item.mode }}</td>
+                                <td>{{ item.selected_days|join(', ') if item.selected_days else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not dashboard.exceptional_conditions %}
+                            <tr>
+                                <td colspan="5">No exceptional operation configured</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Carbon Summary</span>
+                        <h2>Facility sustainability metrics</h2>
+                    </div>
+                </div>
+                <div class="summary-lines">
+                    <div><span>Total Units</span><strong>{{ dashboard.carbon_analysis.total_units }} kWh</strong></div>
+                    <div><span>CO2 Emission</span><strong>{{ dashboard.carbon_analysis.co2_emission }} kg</strong></div>
+                    <div><span>CO2 Saved Potential</span><strong>{{ dashboard.carbon_analysis.co2_saved }} kg</strong></div>
+                    <div><span>Peak Share</span><strong>{{ simulation.peak_units }} kWh</strong></div>
+                </div>
+            </article>
+        </section>
+
+        <section class="chart-grid reveal">
+            <article class="glass-card chart-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Energy Mix</span>
+                        <h2>Machine-wise units</h2>
+                    </div>
+                </div>
+                <canvas id="energyBreakdownChart"></canvas>
+            </article>
+            <article class="glass-card chart-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Time of Use</span>
+                        <h2>Peak vs off-peak usage</h2>
+                    </div>
+                </div>
+                <canvas id="touChart"></canvas>
+            </article>
+        </section>
+
+        <section class="cta-panel reveal">
+            <div>
+                <span class="eyebrow">Next Step</span>
+                <h2>Optimize industrial cost and generate actionable AI recommendations</h2>
+            </div>
+            <div class="cta-actions">
+                <a class="secondary-btn" href="{{ url_for('history') }}">View Run History</a>
+                <a class="primary-btn" href="{{ url_for('optimize') }}">Open Optimization Dashboard</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        window.resultCharts = {
+            breakdownLabels: {{ dashboard.energy_breakdown | map(attribute='machine') | list | tojson }},
+            breakdownValues: {{ dashboard.energy_breakdown | map(attribute='units') | list | tojson }},
+            touLabels: ["Peak Units", "Off-Peak Units"],
+            touValues: [{{ simulation.peak_units }}, {{ simulation.off_peak_units }}]
+        };
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

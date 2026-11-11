@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation History</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-grid">
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-three"></div>
+
+    <main class="page-shell">
+        <section class="result-hero reveal">
+            <div>
+                <span class="eyebrow">Run History</span>
+                <h1>Stored industrial simulation snapshots</h1>
+                <div class="tag-row">
+                    <span class="mini-tag">{{ "MongoDB Active" if database_enabled else "Fallback Memory Store" }}</span>
+                    <span class="mini-tag">Latest {{ runs|length }} runs</span>
+                </div>
+            </div>
+            <div class="cta-actions">
+                <a class="secondary-btn" href="{{ url_for('index') }}">Back to Platform</a>
+            </div>
+        </section>
+
+        <section class="glass-card reveal">
+            <div class="panel-header compact">
+                <div>
+                    <span class="eyebrow">Stored Results</span>
+                    <h2>Simulation history table</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Facility</th>
+                            <th>Total Units</th>
+                            <th>Peak Units</th>
+                            <th>Demand</th>
+                            <th>Total Bill</th>
+                            <th>Optimized Bill</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for run in runs %}
+                        <tr>
+                            <td>{{ run.facility_name }}</td>
+                            <td>{{ run.simulation.total_units }}</td>
+                            <td>{{ run.simulation.peak_units }}</td>
+                            <td>{{ run.simulation.max_demand_kw }}</td>
+                            <td>Rs {{ run.simulation.bill_summary.total_bill }}</td>
+                            <td>{% if run.optimized %}Rs {{ run.optimized.bill_summary.total_bill }}{% else %}-{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not runs %}
+                        <tr>
+                            <td colspan="6">No stored runs available yet</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Optimization Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="theme-grid">
+    <div class="ambient ambient-two"></div>
+    <div class="ambient ambient-three"></div>
+
+    <main class="page-shell">
+        <section class="result-hero reveal">
+            <div>
+                <span class="eyebrow">Industrial Optimization</span>
+                <h1>{{ facility_name }}</h1>
+                <div class="tag-row">
+                    <span class="mini-tag">Current Bill: Rs {{ simulation.bill_summary.total_bill }}</span>
+                    <span class="mini-tag">Peak Cost: Rs {{ dashboard.cost_breakdown.peak_cost }}</span>
+                    <span class="mini-tag">Demand Charge: Rs {{ dashboard.cost_breakdown.demand_charge }}</span>
+                </div>
+            </div>
+            <article class="glass-card metric-card accent">
+                <span>Current Max Demand</span>
+                <strong>{{ simulation.max_demand_kw }} kW</strong>
+            </article>
+        </section>
+
+        <section class="dashboard-grid reveal">
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Optimization Controls</span>
+                        <h2>Production-aware cost target</h2>
+                    </div>
+                </div>
+                <form method="post" class="optimizer-form">
+                    <label>
+                        <span>Target Monthly Budget (Rs)</span>
+                        <input type="number" name="target_budget" min="0" step="0.01" value="{{ optimized.target_budget if optimized else '' }}" required>
+                    </label>
+                    <label>
+                        <span>Production Strategy</span>
+                        <select name="production_mode">
+                            <option value="balanced" {% if not optimized or optimized.production_mode == 'balanced' %}selected{% endif %}>Balanced Output</option>
+                            <option value="efficiency_first" {% if optimized and optimized.production_mode == 'efficiency_first' %}selected{% endif %}>Efficiency First</option>
+                            <option value="high_output" {% if optimized and optimized.production_mode == 'high_output' %}selected{% endif %}>High Output</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="primary-btn">Run Industrial Optimization</button>
+                </form>
+            </article>
+
+            <article class="glass-card gradient-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Facility AI Summary</span>
+                        <h2>Optimization-readiness snapshot</h2>
+                    </div>
+                </div>
+                <div class="summary-lines">
+                    <div><span>Total Units</span><strong>{{ simulation.total_units }} kWh</strong></div>
+                    <div><span>Peak Units</span><strong>{{ simulation.peak_units }} kWh</strong></div>
+                    <div><span>Off-Peak Units</span><strong>{{ simulation.off_peak_units }} kWh</strong></div>
+                    <div><span>CO2 Emission</span><strong>{{ dashboard.carbon_analysis.co2_emission }} kg</strong></div>
+                </div>
+            </article>
+        </section>
+
+        {% if optimized %}
+        <section class="result-hero reveal">
+            <div>
+                <span class="eyebrow">Optimization Result</span>
+                <h2>{{ "Budget Achieved" if optimized.budget_met else "Closest Practical Reduction" }}</h2>
+                <div class="tag-row">
+                    <span class="mini-tag">Optimized Bill: Rs {{ optimized.optimized_bill_summary.total_bill }}</span>
+                    <span class="mini-tag">CO2 Saved: {{ dashboard.carbon_analysis.co2_saved }} kg</span>
+                    <span class="mini-tag">Optimized Peak Cost: Rs {{ dashboard.cost_breakdown.optimized_peak_cost }}</span>
+                </div>
+            </div>
+            <div class="summary-stack">
+                <article class="glass-card metric-card">
+                    <span>Original Bill</span>
+                    <strong>Rs {{ simulation.bill_summary.total_bill }}</strong>
+                </article>
+                <article class="glass-card metric-card accent">
+                    <span>Optimized Bill</span>
+                    <strong>Rs {{ optimized.optimized_bill_summary.total_bill }}</strong>
+                </article>
+                <article class="glass-card metric-card">
+                    <span>Target Budget</span>
+                    <strong>Rs {{ optimized.target_budget }}</strong>
+                </article>
+            </div>
+        </section>
+
+        <section class="dashboard-grid reveal">
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Optimization Actions</span>
+                        <h2>Machine-level adjustments</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Action</th>
+                                <th>Hours</th>
+                                <th>Peak Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in optimized.adjustments %}
+                            <tr>
+                                <td>{{ item.machine }}</td>
+                                <td>{{ item.action }}</td>
+                                <td>{{ item.from_hours }} -> {{ item.to_hours }}</td>
+                                <td>{{ item.from_peak_share }}% -> {{ item.to_peak_share }}%</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not optimized.adjustments %}
+                            <tr>
+                                <td colspan="4">No changes required</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Cost Delta</span>
+                        <h2>Before vs after cost structure</h2>
+                    </div>
+                </div>
+                <div class="summary-lines">
+                    <div><span>Original Peak Cost</span><strong>Rs {{ dashboard.cost_breakdown.peak_cost }}</strong></div>
+                    <div><span>Optimized Peak Cost</span><strong>Rs {{ dashboard.cost_breakdown.optimized_peak_cost }}</strong></div>
+                    <div><span>Original Demand Charge</span><strong>Rs {{ dashboard.cost_breakdown.demand_charge }}</strong></div>
+                    <div><span>Optimized Demand Charge</span><strong>Rs {{ dashboard.cost_breakdown.optimized_demand_charge }}</strong></div>
+                </div>
+            </article>
+        </section>
+        {% endif %}
+
+        <section class="dashboard-grid reveal">
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">AI Optimization Suggestions</span>
+                        <h2>Structured recommendation engine</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Action</th>
+                                <th>Cost Savings</th>
+                                <th>CO2 Reduction</th>
+                                <th>Runtime Reduction</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in dashboard.optimization_suggestions %}
+                            <tr>
+                                <td>{{ item.machine }}</td>
+                                <td>{{ item.action }}</td>
+                                <td>Rs {{ item.cost_savings }}</td>
+                                <td>{{ item.co2_reduction }} kg</td>
+                                <td>{{ item.recommended_reduction_hours }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Predictive Maintenance</span>
+                        <h2>Abnormal usage monitor</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Status</th>
+                                <th>Suggestion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in dashboard.predictive_maintenance %}
+                            <tr>
+                                <td>{{ item.machine }}</td>
+                                <td><span class="status-pill status-{{ 'low' if item.status == 'abnormal_usage_detected' else 'high' }}">{{ item.status }}</span></td>
+                                <td>{{ item.suggestion }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </section>
+
+        <section class="dashboard-grid reveal">
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Efficiency Analysis</span>
+                        <h2>Upgrade candidates</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Status</th>
+                                <th>Upgrade Recommendation</th>
+                                <th>Expected Savings</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in dashboard.efficiency_analysis %}
+                            <tr>
+                                <td>{{ item.machine }}</td>
+                                <td><span class="status-pill status-{{ item.efficiency_status }}">{{ item.efficiency_status }}</span></td>
+                                <td>{{ item.upgrade_recommendation }}</td>
+                                <td>Rs {{ item.expected_savings }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="glass-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Carbon and Cost Impact</span>
+                        <h2>Sustainability comparison</h2>
+                    </div>
+                </div>
+                <div class="summary-lines">
+                    <div><span>Current CO2</span><strong>{{ dashboard.carbon_analysis.co2_emission }} kg</strong></div>
+                    <div><span>Optimized CO2</span><strong>{{ dashboard.carbon_analysis.optimized_co2_emission if dashboard.carbon_analysis.optimized_co2_emission is not none else '-' }}</strong></div>
+                    <div><span>CO2 Saved</span><strong>{{ dashboard.carbon_analysis.co2_saved }} kg</strong></div>
+                    <div><span>Budget Status</span><strong>{{ "Met" if optimized and optimized.budget_met else "Pending / Not Met" }}</strong></div>
+                </div>
+            </article>
+        </section>
+
+        <section class="chart-grid reveal">
+            <article class="glass-card chart-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Bill Comparison</span>
+                        <h2>Industrial cost outcomes</h2>
+                    </div>
+                </div>
+                <canvas id="optimizationCostChart"></canvas>
+            </article>
+            <article class="glass-card chart-card">
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">Carbon Comparison</span>
+                        <h2>Before and after emissions</h2>
+                    </div>
+                </div>
+                <canvas id="carbonChart"></canvas>
+            </article>
+        </section>
+
+        <section class="cta-panel reveal">
+            <div>
+                <span class="eyebrow">Export + History</span>
+                <h2>Generate the facility report or inspect stored runs</h2>
+            </div>
+            <div class="cta-actions">
+                <a class="secondary-btn" href="{{ url_for('history') }}">History</a>
+                <a class="primary-btn" href="{{ url_for('report') }}" target="_blank" rel="noopener">Open PDF Report</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        window.optimizationCharts = {
+            labels: ["Original Bill", "Optimized Bill", "Target Budget"],
+            values: [
+                {{ simulation.bill_summary.total_bill }},
+                {{ optimized.optimized_bill_summary.total_bill if optimized else 0 }},
+                {{ optimized.target_budget if optimized else 0 }}
+            ],
+            carbonLabels: ["Current CO2", "Optimized CO2", "CO2 Saved"],
+            carbonValues: [
+                {{ dashboard.carbon_analysis.co2_emission }},
+                {{ dashboard.carbon_analysis.optimized_co2_emission if dashboard.carbon_analysis.optimized_co2_emission is not none else 0 }},
+                {{ dashboard.carbon_analysis.co2_saved }}
+            ]
+        };
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

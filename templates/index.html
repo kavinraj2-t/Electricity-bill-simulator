@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Energy Intelligence Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-grid">
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <div class="ambient ambient-three"></div>
+
+    <main class="page-shell">
+        <section class="hero-panel reveal">
+            <div class="hero-copy">
+                <span class="eyebrow">AI-Powered Industrial Energy Intelligence Platform</span>
+                <h1>Simulate factory-scale demand, cost, carbon, and optimization strategy</h1>
+                <p>
+                    Structured machine inputs, time-of-use tariffs, demand charges, predictive maintenance signals,
+                    and industry-grade optimization for facilities that need measurable operational guidance.
+                </p>
+                <div class="hero-pills">
+                    <span>Machine-level simulation</span>
+                    <span>Peak vs off-peak billing</span>
+                    <span>Demand charge intelligence</span>
+                    <span>Mongo-backed run history</span>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="glass-card stat-card">
+                    <span class="stat-label">Tariff Model</span>
+                    <strong>TOU + Demand</strong>
+                    <p>Peak, off-peak, and max-demand billing</p>
+                </div>
+                <div class="glass-card stat-card offset">
+                    <span class="stat-label">AI Layer</span>
+                    <strong>Optimization + Maintenance</strong>
+                    <p>Structured suggestions and abnormal usage detection</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="form-panel reveal">
+            <div class="panel-header">
+                <div>
+                    <span class="eyebrow">Facility Configuration</span>
+                    <h2>Define machines, tariffs, and operational exceptions</h2>
+                </div>
+                <div class="cta-actions">
+                    <a class="secondary-btn" href="{{ url_for('history') }}">View History</a>
+                    <button type="button" class="primary-btn small-btn" id="add-machine-btn">+ Add Machine</button>
+                </div>
+            </div>
+
+            <form action="{{ url_for('simulate') }}" method="post" id="industrial-form">
+                <div class="settings-grid top-settings">
+                    <article class="glass-card settings-card">
+                        <h3>Facility Inputs</h3>
+                        <div class="field-grid">
+                            <label>
+                                <span>Facility Name</span>
+                                <input type="text" name="facility_name" value="North Plant Alpha">
+                            </label>
+                            <label>
+                                <span>Days in Billing Cycle</span>
+                                <input type="number" name="days_in_month" min="1" max="31" value="30">
+                            </label>
+                        </div>
+                    </article>
+                    <article class="glass-card settings-card gradient-card">
+                        <h3>Tariff Configuration</h3>
+                        <div class="field-grid">
+                            <label>
+                                <span>Peak Rate (Rs / kWh)</span>
+                                <input type="number" name="peak_rate" min="0.01" step="0.01" value="{{ default_tariff.peak_rate }}">
+                            </label>
+                            <label>
+                                <span>Off-Peak Rate (Rs / kWh)</span>
+                                <input type="number" name="off_peak_rate" min="0.01" step="0.01" value="{{ default_tariff.off_peak_rate }}">
+                            </label>
+                            <label>
+                                <span>Demand Charge (Rs / kW)</span>
+                                <input type="number" name="demand_charge_rate" min="0.01" step="0.01" value="{{ default_tariff.demand_charge_rate }}">
+                            </label>
+                            <label>
+                                <span>Peak Window Hours / Day</span>
+                                <input type="number" name="peak_window_hours" min="1" max="24" value="{{ default_tariff.peak_window_hours }}">
+                            </label>
+                        </div>
+                    </article>
+                </div>
+
+                <div id="machine-container" class="machine-grid">
+                    <article class="glass-card machine-card" data-machine-card>
+                        <div class="card-topline">
+                            <span class="chip">Machine 01</span>
+                            <button type="button" class="ghost-btn remove-machine-btn">Remove</button>
+                        </div>
+
+                        <div class="field-grid">
+                            <label>
+                                <span>Machine Name</span>
+                                <select name="machine_name[]" class="machine-select"></select>
+                            </label>
+                            <label>
+                                <span>Power Rating (kW)</span>
+                                <input type="number" name="power_kw[]" min="0.5" step="0.1" class="power-input" value="18">
+                            </label>
+                            <label>
+                                <span>Operating Hours / Day</span>
+                                <input type="number" name="operating_hours[]" min="0.5" max="24" step="0.5" value="12">
+                            </label>
+                            <label>
+                                <span>Number of Units</span>
+                                <input type="number" name="quantity[]" min="1" max="100" step="1" value="2">
+                            </label>
+                            <label>
+                                <span>Load Type</span>
+                                <select name="load_type[]" class="load-type-select">
+                                    <option value="Constant Load">Constant Load</option>
+                                    <option value="Variable Load">Variable Load</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Efficiency Rating</span>
+                                <select name="efficiency_rating[]" class="efficiency-select">
+                                    <option value="High">High</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Peak Operation Share (%)</span>
+                                <input type="number" name="peak_share[]" min="0" max="100" step="5" value="55">
+                            </label>
+                        </div>
+
+                        <div class="exception-panel">
+                            <div class="exception-header">
+                                <div>
+                                    <span class="eyebrow">Exceptional Operation</span>
+                                    <h3>Structured override</h3>
+                                </div>
+                                <label class="toggle-wrap">
+                                    <input type="checkbox" class="exception-toggle">
+                                    <span>Enable</span>
+                                </label>
+                            </div>
+
+                            <input type="hidden" name="exception_enabled[]" value="0" class="exception-enabled-input">
+                            <input type="hidden" name="exception_selected_days[]" value="" class="selected-days-input">
+
+                            <div class="field-grid exception-fields is-disabled">
+                                <label>
+                                    <span>Extra Operating Hours</span>
+                                    <div class="range-wrap">
+                                        <input type="range" name="exception_extra_hours[]" min="0" max="8" step="0.5" value="0" class="exception-range">
+                                        <strong class="range-value">0.0 hrs</strong>
+                                    </div>
+                                </label>
+                                <label>
+                                    <span>Number of Days Applied</span>
+                                    <input type="number" name="exception_days[]" min="0" max="31" step="1" value="0" class="exception-days-input">
+                                </label>
+                                <label>
+                                    <span>Operation Mode</span>
+                                    <select name="exception_mode[]" class="exception-mode-select">
+                                        <option value="random">Random days</option>
+                                        <option value="specific">Specific days</option>
+                                    </select>
+                                </label>
+                                <label class="day-selector-block is-hidden">
+                                    <span>Specific Days</span>
+                                    <select multiple class="selected-days-multiselect day-select">
+                                        {% for day in range(1, 32) %}
+                                        <option value="{{ day }}">Day {{ day }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <button type="submit" class="primary-btn pulse-btn">Run Industrial Simulation</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        window.machineLibrary = {{ machine_library | tojson }};
+    </script>
+
+    <template id="machine-template">
+        <article class="glass-card machine-card" data-machine-card>
+            <div class="card-topline">
+                <span class="chip">Machine</span>
+                <button type="button" class="ghost-btn remove-machine-btn">Remove</button>
+            </div>
+
+            <div class="field-grid">
+                <label>
+                    <span>Machine Name</span>
+                    <select name="machine_name[]" class="machine-select"></select>
+                </label>
+                <label>
+                    <span>Power Rating (kW)</span>
+                    <input type="number" name="power_kw[]" min="0.5" step="0.1" class="power-input" value="18">
+                </label>
+                <label>
+                    <span>Operating Hours / Day</span>
+                    <input type="number" name="operating_hours[]" min="0.5" max="24" step="0.5" value="12">
+                </label>
+                <label>
+                    <span>Number of Units</span>
+                    <input type="number" name="quantity[]" min="1" max="100" step="1" value="1">
+                </label>
+                <label>
+                    <span>Load Type</span>
+                    <select name="load_type[]" class="load-type-select">
+                        <option value="Constant Load">Constant Load</option>
+                        <option value="Variable Load">Variable Load</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Efficiency Rating</span>
+                    <select name="efficiency_rating[]" class="efficiency-select">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Peak Operation Share (%)</span>
+                    <input type="number" name="peak_share[]" min="0" max="100" step="5" value="50">
+                </label>
+            </div>
+
+            <div class="exception-panel">
+                <div class="exception-header">
+                    <div>
+                        <span class="eyebrow">Exceptional Operation</span>
+                        <h3>Structured override</h3>
+                    </div>
+                    <label class="toggle-wrap">
+                        <input type="checkbox" class="exception-toggle">
+                        <span>Enable</span>
+                    </label>
+                </div>
+
+                <input type="hidden" name="exception_enabled[]" value="0" class="exception-enabled-input">
+                <input type="hidden" name="exception_selected_days[]" value="" class="selected-days-input">
+
+                <div class="field-grid exception-fields is-disabled">
+                    <label>
+                        <span>Extra Operating Hours</span>
+                        <div class="range-wrap">
+                            <input type="range" name="exception_extra_hours[]" min="0" max="8" step="0.5" value="0" class="exception-range">
+                            <strong class="range-value">0.0 hrs</strong>
+                        </div>
+                    </label>
+                    <label>
+                        <span>Number of Days Applied</span>
+                        <input type="number" name="exception_days[]" min="0" max="31" step="1" value="0" class="exception-days-input">
+                    </label>
+                    <label>
+                        <span>Operation Mode</span>
+                        <select name="exception_mode[]" class="exception-mode-select">
+                            <option value="random">Random days</option>
+                            <option value="specific">Specific days</option>
+                        </select>
+                    </label>
+                    <label class="day-selector-block is-hidden">
+                        <span>Specific Days</span>
+                        <select multiple class="selected-days-multiselect day-select">
+                            {% for day in range(1, 32) %}
+                            <option value="{{ day }}">Day {{ day }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </article>
+    </template>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Energy Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="report-body">
+    <main class="report-shell">
+        <section class="report-header">
+            <div>
+                <span class="eyebrow">Industrial Report Export</span>
+                <h1>{{ facility_name }} Energy Intelligence Report</h1>
+            </div>
+            <button class="primary-btn print-btn" onclick="window.print()">Print / Save as PDF</button>
+        </section>
+
+        <section class="report-grid">
+            <article class="report-card">
+                <h2>Energy Usage Summary</h2>
+                <div class="summary-lines">
+                    <div><span>Total Units</span><strong>{{ simulation.total_units }} kWh</strong></div>
+                    <div><span>Peak Units</span><strong>{{ simulation.peak_units }} kWh</strong></div>
+                    <div><span>Off-Peak Units</span><strong>{{ simulation.off_peak_units }} kWh</strong></div>
+                    <div><span>Max Demand</span><strong>{{ simulation.max_demand_kw }} kW</strong></div>
+                </div>
+            </article>
+            <article class="report-card">
+                <h2>Cost Analysis</h2>
+                <div class="summary-lines">
+                    <div><span>Total Bill</span><strong>Rs {{ simulation.bill_summary.total_bill }}</strong></div>
+                    <div><span>Peak Cost</span><strong>Rs {{ simulation.bill_summary.peak_cost }}</strong></div>
+                    <div><span>Off-Peak Cost</span><strong>Rs {{ simulation.bill_summary.off_peak_cost }}</strong></div>
+                    <div><span>Demand Charge</span><strong>Rs {{ simulation.bill_summary.demand_charge }}</strong></div>
+                </div>
+            </article>
+        </section>
+
+        <section class="report-card">
+            <h2>CO2 Impact</h2>
+            <div class="summary-lines">
+                <div><span>Current CO2</span><strong>{{ dashboard.carbon_analysis.co2_emission }} kg</strong></div>
+                <div><span>Optimized CO2</span><strong>{{ dashboard.carbon_analysis.optimized_co2_emission if dashboard.carbon_analysis.optimized_co2_emission is not none else '-' }}</strong></div>
+                <div><span>CO2 Saved</span><strong>{{ dashboard.carbon_analysis.co2_saved }} kg</strong></div>
+                <div><span>Optimized Bill</span><strong>{% if optimized %}Rs {{ optimized.optimized_bill_summary.total_bill }}{% else %}-{% endif %}</strong></div>
+            </div>
+        </section>
+
+        <section class="report-card">
+            <h2>Energy Consumption Breakdown</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Machine</th>
+                        <th>Units</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in dashboard.energy_breakdown %}
+                    <tr>
+                        <td>{{ item.machine }}</td>
+                        <td>{{ item.units }}</td>
+                        <td>{{ item.percentage }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="report-card">
+            <h2>Efficiency Recommendations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Machine</th>
+                        <th>Status</th>
+                        <th>Upgrade</th>
+                        <th>Expected Savings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in dashboard.efficiency_analysis %}
+                    <tr>
+                        <td>{{ item.machine }}</td>
+                        <td>{{ item.efficiency_status }}</td>
+                        <td>{{ item.upgrade_recommendation }}</td>
+                        <td>Rs {{ item.expected_savings }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="report-card">
+            <h2>Optimization Strategies</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Machine</th>
+                        <th>Action</th>
+                        <th>Cost Savings</th>
+                        <th>CO2 Reduction</th>
+                        <th>Reduction Hours</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in dashboard.optimization_suggestions %}
+                    <tr>
+                        <td>{{ item.machine }}</td>
+                        <td>{{ item.action }}</td>
+                        <td>Rs {{ item.cost_savings }}</td>
+                        <td>{{ item.co2_reduction }} kg</td>
+                        <td>{{ item.recommended_reduction_hours }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>
